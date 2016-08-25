@@ -23,7 +23,7 @@ use SerginhoLD\CSV\Exception\WrongFileMimeTypeException;
 class Parser extends \ArrayObject
 {
     /**
-     * @const string Разрыв строки
+     * @var string Разрыв строки
      */
     const CRLF = "\r\n";
     
@@ -150,14 +150,14 @@ class Parser extends \ArrayObject
                     
                     $countEnclosure = mb_substr_count($cell, $this->enclosure);
                     $countDelimiter = mb_substr_count($cell, $this->delimiter);
-                    $countCRLF = mb_substr_count($cell, self::CRLF);
+                    $countLF = mb_substr_count($cell, "\n");
     
                     if ($countEnclosure)
                     {
                         $csvCell = str_replace($this->enclosure, ($this->enclosure . $this->enclosure), $cell);
                     }
                     
-                    if ($countEnclosure || $countDelimiter || $countCRLF)
+                    if ($countEnclosure || $countDelimiter || $countLF)
                     {
                         $csvCell = $this->enclosure . $csvCell . $this->enclosure;
                     }
