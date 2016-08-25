@@ -1,0 +1,21 @@
+{
+  "name": "serginhold/csv",
+  "description": "CSV Parser (RFC 4180)",
+  "keywords": ["CSV", "RFC 4180"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sergey Zubrilin",
+      "homepage": "http://serginhold.ru"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "SerginhoLD\\CSV\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "ext-mbstring": "*"
+  }
+}
