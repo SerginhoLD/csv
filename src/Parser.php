@@ -21,7 +21,6 @@ use SerginhoLD\CSV\Exception\WrongFileMimeTypeException;
  * @package SerginhoLD\CSV
  */
 class Parser extends \ArrayObject
-//class Parser implements \ArrayAccess, \Iterator, \Countable
 {
     /**
      * @const string Разрыв строки
@@ -61,24 +60,22 @@ class Parser extends \ArrayObject
         {
             throw new FileNotFoundException($path);
         }
-    
+        
         if (!in_array((new \finfo(FILEINFO_MIME_TYPE))->file($path), $this->mimeTypes, true))
         {
             throw new WrongFileMimeTypeException($path);
         }
-    
-        //$this->parse(file_get_contents($path));
-    
+        
         $data = null;
         $file = fopen($path, 'r');
-    
+        
         while (($buffer = fgets($file)) !== false)
         {
             $data .= $buffer;
         }
-    
+        
         fclose($file);
-    
+        
         return $this->parse($data);
     }
     
@@ -91,9 +88,9 @@ class Parser extends \ArrayObject
      */
     public function parse($data)
     {
-        $result = str_replace("\n", self::CRLF, $data); // Linux or Windows? 😕
-        $result = explode(self::CRLF, $result);
-    
+        $result = str_replace(self::CRLF, "\n", $data); // Linux or Windows? 😕
+        $result = explode("\n", $result);
+        
         $issetNextRow = true;
         $index = 0;
         
@@ -113,7 +110,7 @@ class Parser extends \ArrayObject
             {
                 $row .= self::CRLF . $result[$nextIndex];
                 unset($result[$nextIndex]);
-    
+                
                 prev($result);
             }
             else
@@ -126,7 +123,7 @@ class Parser extends \ArrayObject
         }
         
         $this->exchangeArray($result);
-    
+        
         return $this;
     }
     
@@ -170,7 +167,7 @@ class Parser extends \ArrayObject
                 
                 $csvRows[] = implode($this->delimiter, $csvRow);
             }
-    
+            
             $csv = implode(self::CRLF, $csvRows);
         }
         
@@ -256,155 +253,7 @@ class Parser extends \ArrayObject
      * @return array
      */
     public function __invoke()
-        //public function __invoke(array & $data = null)
     {
         return $this->getArrayCopy();
-        //return is_null($data) ? $this->rows : $data;
     }
-    /**
-     * @var array Строки
-     *
-    protected $rows = [];
-    
-    /**
-     * @var mixed Ключ текущего элемента
-     *
-    private $position;
-    
-    /**
-     * Constructor
-     *
-    public function __construct()
-    {
-        $this->rewind();
-    }
-    
-    /**
-     * Добавление новой строки
-     * 
-     * @param array $row
-     *
-    public function append(array $row)
-    {
-        //$this->rows[] = $row;
-        $this->offsetSet(null, $row);
-    }
-    
-    /**
-     * Присваивание значения для заданной строки
-     * 
-     * @param mixed $offset
-     * @param mixed $value
-     *
-    public function offsetSet($offset, $value)
-    {
-        if (!is_array($value))
-        {
-            $value = (array)$value;
-        }
-        
-        if (is_null($offset) /*|| !key_exists($offset, $this->rows)*)
-        {
-            $this->rows[] = $value;
-        }
-        else
-        {
-            $this->rows[$offset] = $value;
-        }
-    }
-    
-    /**
-     * Проверка на существование строки
-     * 
-     * @param mixed $offset
-     * 
-     * @return bool
-     *
-    public function offsetExists($offset)
-    {
-        return isset($this->rows[$offset]);
-    }
-    
-    /**
-     * Удаление строки
-     * 
-     * @param mixed $offset
-     *
-    public function offsetUnset($offset)
-    {
-        unset($this->rows[$offset]);
-    }
-    
-    /**
-     * Возвращает заданную строку
-     * 
-     * @param mixed $offset
-     * 
-     * @return mixed|null
-     *
-    public function offsetGet($offset)
-    {
-        return isset($this->rows[$offset]) ? $this->rows[$offset] : null;
-    }
-    
-    /**
-     * Возвращает итератор обратно на первый элемент
-     * В начале цикла foreach этот метод вызывается первым, этот метод не будет вызван после цикла foreach
-     *
-    function rewind()
-    {
-        reset($this->rows);
-        $this->position = key($this->rows);
-    }
-    
-    /**
-     * Возвращает текущий элемент
-     * 
-     * @return mixed
-     *
-    function current()
-    {
-        return $this->rows[$this->position];
-    }
-    
-    /**
-     * Возвращает ключ текущего элемента
-     * 
-     * @return mixed
-     *
-    function key()
-    {
-        return $this->position;
-    }
-    
-    /**
-     * Передвигает текущую позицию к следующему элементу
-     * Метод вызывается после каждой итерации foreach
-     *
-    function next()
-    {
-        next($this->rows);
-        $this->position = key($this->rows);
-    }
-    
-    /**
-     * Этот метод вызывается после Iterator::rewind() и Iterator::next() чтобы проверить, корректна ли текущая позиция
-     * 
-     * @return bool
-     *
-    function valid()
-    {
-        return isset($this->rows[$this->position]);
-    }
-    
-    /**
-     * Кол-во строк
-     * 
-     * @return int
-     *
-    public function count()
-    {
-        return count($this->rows);
-    }
-    /**/
 }
