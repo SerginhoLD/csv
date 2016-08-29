@@ -1,6 +1,11 @@
-# CSV Parser
+# CSV Parser (RFC 4180)
 
-## Пример
+## Installation
+```bash
+composer require serginhold/csv
+```
+
+## Example
 
 CSV:
 ```csv
@@ -12,7 +17,15 @@ Hotspur FC",ENG
 4,Monaco,FRA
 ```
 
-Результат:
+Code:
+```php
+$csv = new \SerginhoLD\CSV\Parser;
+$csv->parseFile($path);
+
+print_r((array)$csv);
+```
+
+Result:
 ```php
 return [
     ["Pot", "Club", "Country"],
@@ -23,5 +36,5 @@ return [
 ];
 ```
 
-## Лицензия
+## License
 [MIT](LICENSE.md)
