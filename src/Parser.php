@@ -74,6 +74,11 @@ class Parser extends \ArrayObject
     protected static $finfo;
     
     /**
+     * @var bool Строгий режим, разрыв строк строго равен CRLF
+     */
+    protected $strictMode = false;
+    
+    /**
      * {@inheritdoc}
      */
     public function __construct($input = [], $flags = 0, $iterator_class = "ArrayIterator")
@@ -89,35 +94,28 @@ class Parser extends \ArrayObject
     /**
      * Разбор CSV
      * 
-     * @param string $data
+     * @param string $data CSV
      * 
      * @return $this
      */
     public function parse($data)
     {
-        if ($this->inputEncoding !== $this->outputEncoding)
-        {
-            $data = mb_convert_encoding($data, $this->outputEncoding, $this->inputEncoding);
-        }
+        // http://php.net/manual/ru/regexp.reference.escape.php#108096 🤔
+        $newlinePattern = $this->strictMode ? self::CRLF : "\R";
         
-        $result = str_replace(self::CRLF, "\n", $data); // Linux or Windows? 😕
-        $result = explode("\n", $result);
-        
-        $result = array_filter($result, function($row) {
-            return $row !== '';
-        });
+        $rows = preg_split("/$newlinePattern/", self::encode($data, $this->inputEncoding, $this->outputEncoding));
         
         $issetNextRow = true;
-        $index = key($result);
+        $index = key($rows);
         $maxRowSize = 0;
         
         while ($issetNextRow)
         {
-            next($result);
-            $nextIndex = key($result);
-            $issetNextRow = isset($result[$nextIndex]);
+            next($rows);
+            $nextIndex = key($rows);
+            $issetNextRow = isset($rows[$nextIndex]);
             
-            $row = &$result[$index];
+            $row = &$rows[$index];
             $countEnclosure = mb_substr_count($row, $this->enclosure, $this->outputEncoding);
             
             // Проверяем кол-во символов ограничителя полей в текущей строке.
@@ -125,14 +123,20 @@ class Parser extends \ArrayObject
             // объединяем текущую строку со следующей и проверям заново.
             if ($countEnclosure % 2 !== 0 && $issetNextRow)
             {
-                $row .= self::CRLF . $result[$nextIndex];
-                unset($result[$nextIndex]);
-    
-                prev($result);
+                $row .= self::CRLF . $rows[$nextIndex];
+                unset($rows[$nextIndex]);
+                
+                prev($rows);
+            }
+            // Удаляем пустую строку
+            else if (trim($row) === '')
+            {
+                unset($rows[$index]);
+                $index = $nextIndex;
             }
             else
             {
-                $row = $this->parseRow($row, $this->delimiter, $this->enclosure);
+                $row = self::parseString($row, $this->delimiter, $this->enclosure);
                 $index = $nextIndex;
                 
                 $rowSize = count($row);
@@ -140,22 +144,19 @@ class Parser extends \ArrayObject
             }
         }
         
-        // Каждая строка должна содержать одинаковое количество полей по всему файлу
-        $result = array_map(function($row) use ($maxRowSize) {
-            return array_pad($row, $maxRowSize, null);
-        }, array_values($result));
+        // Каждая строка должна содержать одинаковое количество полей по всему файлу,
+        // по этому увеличиваем размер массива каждой строки до величины `$maxRowSize`.
+        $rows = self::arrayPadMap(array_values($rows), $maxRowSize);
         
         if ($this->withHeaders)
         {
-            $this->headers = $headers = $result[0];
-            unset($result[0]);
+            $this->headers = $rows[0];
+            unset($rows[0]);
             
-            $result = array_map(function($row) use ($headers) {
-                return array_combine($headers, $row);
-            }, array_values($result));
+            $rows = self::arrayCombineMap($this->headers, array_values($rows));
         }
         
-        $this->exchangeArray($result);
+        $this->exchangeArray($rows);
         
         return $this;
     }
@@ -173,7 +174,7 @@ class Parser extends \ArrayObject
      * 
      * @return array
      */
-    public function parseRow($str, $delimiter, $enclosure)
+    public static function parseString($str, $delimiter, $enclosure)
     {
         return str_getcsv($str, $delimiter, $enclosure, $enclosure);
     }
@@ -198,12 +199,15 @@ class Parser extends \ArrayObject
         $data = null;
         $file = fopen($path, 'r');
         
-        while (($buffer = fgets($file)) !== false)
+        if ($file)
         {
-            $data .= $buffer;
+            while (($buffer = fgets($file)) !== false)
+            {
+                $data .= $buffer;
+            }
+            
+            fclose($file);
         }
-        
-        fclose($file);
         
         return $this->parse($data);
     }
@@ -212,54 +216,51 @@ class Parser extends \ArrayObject
      * Присваивает значения для заданной строки
      *
      * @param mixed $index
-     * @param array $value One-dimensional array
+     * @param array $values One-dimensional array
      *
      * @throws \InvalidArgumentException
      */
-    public function offsetSet($index, $value)
+    public function offsetSet($index, $values)
     {
-        if (!is_array($value) || count(array_filter($value, 'is_array')))
+        if (!is_array($values) || count(array_filter($values, 'is_array')))
         {
-            throw new \InvalidArgumentException('Argument `$value` is not a one-dimensional array');
+            throw new \InvalidArgumentException('Argument `$values` is not a one-dimensional array');
         }
         
-        $newRowSize = count($value);
+        // Каждая строка должна содержать одинаковое количество полей по всему файлу.
         $csvFirstRowKey = key($this->getArrayCopy());
-        $csvRowSize = ($csvFirstRowKey !== null) ? count($this[$csvFirstRowKey]) : 0;
         
-        if ($csvRowSize)
+        if (null !== $csvFirstRowKey)
         {
+            $newRowSize = count($values);
+            $csvRowSize = count($this[$csvFirstRowKey]);
+            
             if ($csvRowSize > $newRowSize)
             {
-                $value = array_pad($value, $csvRowSize, null);
+                $values = array_pad($values, $csvRowSize, null);
             }
             else if ($csvRowSize < $newRowSize)
             {
-                // or Exception?
-                $this->exchangeArray(array_map(function($row) use ($newRowSize) {
-                    return array_pad($row, $newRowSize, null);
-                }, $this->getArrayCopy()));
+                $this->exchangeArray(self::arrayPadMap($this->getArrayCopy(), $newRowSize));
             }
         }
         
-        if ($this->inputEncoding !== $this->outputEncoding)
+        if ($this->issetHeaders())
         {
-            $value = array_map(function($cell) {
-                return mb_convert_encoding($cell, $this->outputEncoding, $this->inputEncoding);
-            }, $value);
+            $values = array_combine($this->getHeaders(), $values);
         }
         
-        parent::offsetSet($index, $value);
+        parent::offsetSet($index, $values);
     }
     
     /**
      * Добавляет новую строку
      *
-     * @param array $value One-dimensional array
+     * @param array $values One-dimensional array
      */
-    public function append($value)
+    public function append($values)
     {
-        $this->offsetSet(null, $value);
+        $this->offsetSet(null, $values);
     }
     
     /**
@@ -269,21 +270,40 @@ class Parser extends \ArrayObject
      */
     public function __toString()
     {
-        return implode(self::CRLF, array_map(function($row) {
+        $enclosureChars = [$this->delimiter, "\n", "\r"]; // and $this->enclosure
+        $rows = $this->getArrayCopy();
+        
+        if ($this->issetHeaders())
+        {
+            $rows = array_merge([$this->headers], $rows);
+        }
+        
+        return implode(self::CRLF, array_map(function($row) use ($enclosureChars) {
             
-            return implode($this->delimiter, array_map(function($cell) {
+            return implode($this->delimiter, array_map(function($cell) use ($enclosureChars) {
                 
                 $countEnclosure = mb_substr_count($cell, $this->enclosure, $this->outputEncoding);
-                $countDelimiter = mb_substr_count($cell, $this->delimiter, $this->outputEncoding);
-                $countCR = mb_substr_count($cell, "\r", $this->outputEncoding);
-                $countLF = mb_substr_count($cell, "\n", $this->outputEncoding);
-    
+                $flagEnclosure = false;
+                
                 if ($countEnclosure)
                 {
                     $cell = str_replace($this->enclosure, ($this->enclosure . $this->enclosure), $cell);
+                    $flagEnclosure = true;
                 }
-    
-                if ($countEnclosure || $countDelimiter || $countCR || $countLF)
+                else
+                {
+                    // Вместо постоянного использования mb_substr_count по 4 раза для каждого элемента 🤔
+                    foreach ($enclosureChars as $char)
+                    {
+                        if (mb_substr_count($cell, $char, $this->outputEncoding))
+                        {
+                            $flagEnclosure = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if ($flagEnclosure)
                 {
                     $cell = $this->enclosure . $cell . $this->enclosure;
                 }
@@ -292,7 +312,7 @@ class Parser extends \ArrayObject
                 
             }, $row));
             
-        }, $this->getArrayCopy()));
+        }, $rows));
     }
     
     /**
@@ -326,23 +346,44 @@ class Parser extends \ArrayObject
      * Устанавливает заголовки полей
      * 
      * @param array $headers
+     * @param bool $deleteFirstRow Для удаления первой строки (если в ней находятся заголовки)
      * 
      * @return $this
      */
-    public function setHeaders(array $headers)
+    public function setHeaders(array $headers, $deleteFirstRow = false)
     {
         $this->headers = $headers;
-        return $this;
+        
+        if ($this->count())
+        {
+            if ($deleteFirstRow)
+            {
+                $firstRowKey = key($this->getArrayCopy());
+                unset($this[$firstRowKey]);
+            }
+            
+            $this->exchangeArray(self::arrayCombineMap($headers, $this->getArrayCopy()));
+        }
+        
+        return $this->withHeaders(true);
     }
     
     /**
      * Возвращает заголовки полей
      * 
-     * @return array|false
+     * @return array
      */
     public function getHeaders()
     {
-        return $this->withHeaders ? $this->headers : false;
+        return $this->headers;
+    }
+    
+    /**
+     * @return bool
+     */
+    public function issetHeaders()
+    {
+        return $this->withHeaders && !empty($this->getHeaders());
     }
     
     /**
@@ -392,7 +433,43 @@ class Parser extends \ArrayObject
     }
     
     /**
-     * @param $encoding
+     * @param string $str
+     * @param string $inputEncoding
+     * @param string $outputEncoding
+     * 
+     * @return string
+     */
+    public static function encode($str, $inputEncoding, $outputEncoding)
+    {
+        if ($inputEncoding !== $outputEncoding)
+        {
+            $str = mb_convert_encoding($str, $outputEncoding, $inputEncoding);
+        }
+        
+        return $str;
+    }
+    
+    /**
+     * @param array $array One-dimensional array
+     * @param string $inputEncoding
+     * @param string $outputEncoding
+     * 
+     * @return array
+     */
+    public static function encodeArray(array $array, $inputEncoding, $outputEncoding)
+    {
+        if ($inputEncoding !== $outputEncoding)
+        {
+            $array = array_map(function($str) use ($inputEncoding, $outputEncoding) {
+                return self::encode($str, $inputEncoding, $outputEncoding);
+            }, $array);
+        }
+        
+        return $array;
+    }
+    
+    /**
+     * @param string $encoding
      * 
      * @return $this
      */
@@ -411,7 +488,9 @@ class Parser extends \ArrayObject
     }
     
     /**
-     * @param $encoding
+     * Изменяет кодировку вывода и всех элементов объекта
+     * 
+     * @param string $encoding
      * 
      * @return $this
      */
@@ -419,16 +498,25 @@ class Parser extends \ArrayObject
     {
         if ($encoding !== $this->outputEncoding)
         {
-            // encode all rows
+            $countHeaders = count($this->headers);
+            
+            if ($countHeaders)
+            {
+                $this->headers = self::encodeArray($this->headers, $this->outputEncoding, $encoding);
+            }
             
             if ($this->count())
             {
-                //
-            }
-            
-            if (count($this->headers))
-            {
-                //
+                $this->exchangeArray(array_map(function($row) use ($encoding, $countHeaders) {
+                    
+                    if ($countHeaders)
+                    {
+                        $row = array_combine($this->headers, $row);
+                    }
+                    
+                    return self::encodeArray($row, $this->outputEncoding, $encoding);
+                    
+                }, $this->getArrayCopy()));
             }
         }
         
@@ -476,8 +564,35 @@ class Parser extends \ArrayObject
     }
     
     /**
+     * @param array $keys One-dimensional array
+     * @param array $array Two-dimensional array
+     * 
+     * @return array
+     */
+    public static function arrayCombineMap(array $keys, array $array)
+    {
+        return array_map(function($row) use ($keys) {
+            return array_combine($keys, $row);
+        }, $array);
+    }
+    
+    /**
+     * @param array $array Two-dimensional array
+     * @param int $size
+     * @param mixed $value
+     * 
+     * @return array
+     */
+    public static function arrayPadMap(array $array, $size, $value = null)
+    {
+        return array_map(function($row) use ($size, $value) {
+            return array_pad($row, $size, $value);
+        }, $array);
+    }
+    
+    /**
      * Если используется как функция, возвращает CSV в виде массива
-     *
+     * 
      * @return array
      */
     public function __invoke()
