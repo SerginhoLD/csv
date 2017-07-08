@@ -19,21 +19,58 @@ Hotspur FC",ENG
 
 Code:
 ```php
-$csv = new \SerginhoLD\CSV\Parser;
-$csv->parseFile($path);
+$csv = new \SerginhoLD\CSV\Parser();
+$arCsv = [];
 
-print_r((array)$csv);
+foreach ($csv->parseFile(__DIR__ . '/sample.utf8.csv') as $row)
+{
+    $arCsv[] = $row;
+}
+
+echo '<pre>' . print_r($arCsv, true) . '</pre>';
 ```
 
 Result:
-```php
-return [
-    ["Pot", "Club", "Country"],
-    ["1", "PFC CSKA Moskva", "RUS"],
-    ["2", "Bayer 04 Leverkusen", "GER"],
-    ["3", "Tottenham\r\nHotspur FC", "ENG"],
-    ["4", "Monaco", "FRA"],
-];
+```
+Array
+(
+    [0] => Array
+        (
+            [0] => Pot
+            [1] => Club
+            [2] => Country
+        )
+
+    [1] => Array
+        (
+            [0] => 1
+            [1] => PFC CSKA Moskva
+            [2] => RUS
+        )
+
+    [2] => Array
+        (
+            [0] => 2
+            [1] => Bayer 04 Leverkusen
+            [2] => GER
+        )
+
+    [3] => Array
+        (
+            [0] => 3
+            [1] => Tottenham
+Hotspur FC
+            [2] => ENG
+        )
+
+    [4] => Array
+        (
+            [0] => 4
+            [1] => Monaco
+            [2] => FRA
+        )
+
+)
 ```
 
 ## License
