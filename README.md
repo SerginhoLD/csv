@@ -19,7 +19,7 @@ Hotspur FC",ENG
 
 Code:
 ```php
-$csv = new \SerginhoLD\CSV\Parser();
+$csv = new \SerginhoLD\Csv\Parser();
 $arCsv = [];
 
 foreach ($csv->parseFile(__DIR__ . '/sample.utf8.csv') as $row)

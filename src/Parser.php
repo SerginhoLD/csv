@@ -11,13 +11,13 @@
  * @license MIT
  */
 
-namespace SerginhoLD\CSV;
+namespace SerginhoLD\Csv;
 
-use SerginhoLD\CSV\Exception\FileNotFoundException;
+use SerginhoLD\Csv\Exception\FileNotFoundException;
 
 /**
  * Class Parser
- * @package SerginhoLD\CSV
+ * @package SerginhoLD\Csv
  */
 class Parser
 {

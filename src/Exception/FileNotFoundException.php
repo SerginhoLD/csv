@@ -1,9 +1,9 @@
 <?php
-namespace SerginhoLD\CSV\Exception;
+namespace SerginhoLD\Csv\Exception;
 
 /**
  * Class FileNotFoundException
- * @package SerginhoLD\CSV\Exception
+ * @package SerginhoLD\Csv\Exception
  */
 class FileNotFoundException extends IOException
 {

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/__autoload.php';
 
-$csv = new \SerginhoLD\CSV\Parser(';');
+$csv = new \SerginhoLD\Csv\Parser(';');
 $arCsv = [];
 
 $convertFunc = function ($row) {
