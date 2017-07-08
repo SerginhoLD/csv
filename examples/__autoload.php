@@ -4,7 +4,7 @@
  */
 spl_autoload_register(function($class) {
     
-    $prefix = 'SerginhoLD\\CSV\\';
+    $prefix = 'SerginhoLD\\Csv\\';
     $base_dir = __DIR__ . '/../src/';
     
     $len = strlen($prefix);
