@@ -58,47 +58,52 @@ class Parser
         $handle = @fopen($file, 'r');
         
         if ($handle === false)
-            throw new \Exception('Could not open file for reading', $file);
+            throw new \RuntimeException('Could not open file for reading');
         
-        $row = null;
-        
-        while (!feof($handle))
+        try
         {
-            $buffer = fgets($handle);
-            
-            if ($convert !== null)
-                $buffer = $convert($buffer, $this);
-            
-            $row .= $buffer;
-            
-            // Не берем пустые строки
-            if (trim($row) === '')
-            {
-                $row = null;
-                continue;
-            }
-            // Проверяем кол-во символов ограничителя полей в текущей строке
-            // Если их нечетное кол-во, значит в одном из полей строки находится символ разрыва строки
-            // объединяем текущую строку со следующей и проверям заново
-            else if (mb_substr_count($row, $this->getEnclosure()) % 2 !== 0)
-            {
-                continue;
-            }
-            
-            yield $this->parseString($row);
             $row = null;
+            
+            while (!feof($handle))
+            {
+                $buffer = fgets($handle);
+                
+                if ($convert instanceof \Closure)
+                    $buffer = $convert($buffer, $this);
+                
+                $row .= $buffer;
+                
+                // Не берем пустые строки
+                if (trim($row) === '')
+                {
+                    $row = null;
+                    continue;
+                }
+                // Проверяем кол-во символов ограничителя полей в текущей строке
+                // Если их нечетное кол-во, значит в одном из полей строки находится символ разрыва строки
+                // объединяем текущую строку со следующей и проверям заново
+                else if (mb_substr_count($row, $this->getEnclosure()) % 2 !== 0)
+                {
+                    continue;
+                }
+                
+                yield $this->parseString($row);
+                $row = null;
+            }
         }
-        
-        fclose($handle);
+        finally
+        {
+            fclose($handle);
+        }
     }
     
     /**
-     * @param string $str
+     * @param string $csv
      * @return array
      */
-    public function parse($str)
+    public function parse($csv)
     {
-        $data = explode("\n", str_replace(["\r\n", "\n\r", "\n"], "\n", $str));
+        $data = explode("\n", str_replace(["\r\n", "\n\r", "\n"], "\n", $csv));
         $rows = [];
         $row = null;
         
