@@ -1,4 +1,4 @@
-# CSV Parser (RFC 4180)
+# Simple csv parser (RFC 4180)
 
 ## Installation
 ```bash
@@ -72,6 +72,56 @@ Hotspur FC
 
 )
 ```
+
+## Methods
+```php
+/**
+ * @param string $file Path to csv file
+ * @param \Closure|null $convert Function for converting each line of a file
+ * @return \Generator
+ */
+public function parseFile($file, \Closure $convert = null)
+
+/**
+ * @param string $csv
+ * @return array
+ */
+public function parse($csv)
+
+/**
+ * @param string $str
+ * @param string $delimiter
+ * @param string $enclosure
+ * @return string[]
+ */
+public function parseString($str, $delimiter = null, $enclosure = null)
+
+/**
+ * @return string
+ */
+public function getDelimiter()
+
+/**
+ * @param string $delimiter
+ * @return $this
+ */
+public function setDelimiter($delimiter)
+   
+/**
+ * @return string
+ */
+public function getEnclosure()
+
+/**
+ * @param string $enclosure
+ * @return $this
+ */
+public function setEnclosure($enclosure)
+```
+
+## Requirements
+* PHP >= 5.5.0
+* mbstring
 
 ## License
 [MIT](LICENSE.md)

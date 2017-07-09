@@ -167,7 +167,7 @@ class Parser
     }
     
     /**
-     * @param $delimiter
+     * @param string $delimiter
      * @return $this
      */
     public function setDelimiter($delimiter)
@@ -185,7 +185,7 @@ class Parser
     }
     
     /**
-     * @param $enclosure
+     * @param string $enclosure
      * @return $this
      */
     public function setEnclosure($enclosure)

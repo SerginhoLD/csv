@@ -1,6 +1,6 @@
 {
   "name": "serginhold/csv",
-  "description": "CSV Parser (RFC 4180)",
+  "description": "Simple csv parser (RFC 4180)",
   "keywords": ["csv", "RFC 4180"],
   "license": "MIT",
   "authors": [
