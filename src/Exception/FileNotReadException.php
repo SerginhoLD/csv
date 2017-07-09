@@ -20,5 +20,6 @@ class FileNotReadException extends IOException
             $message = sprintf('File "%s" can not be read.', $path);
         }
         
+        parent::__construct($path, $message, 0, $previous);
     }
 }
