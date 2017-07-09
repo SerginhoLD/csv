@@ -5,7 +5,7 @@ namespace SerginhoLD\Csv\Exception;
  * Class WrongFileMimeTypeException
  * @package SerginhoLD\Csv\Exception
  */
-class WrongFileMimeTypeException extends IOException
+class WrongFileMimeTypeException extends FileException
 {
     /**
      * WrongFileMimeTypeException constructor.

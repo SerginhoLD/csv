@@ -5,7 +5,7 @@ namespace SerginhoLD\Csv\Exception;
  * Class FileNotReadException
  * @package SerginhoLD\Csv\Exception
  */
-class FileNotReadException extends IOException
+class FileNotReadException extends FileException
 {
     /**
      * FileNotReadException constructor.

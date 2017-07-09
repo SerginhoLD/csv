@@ -5,7 +5,7 @@ namespace SerginhoLD\Csv\Exception;
  * Class IOException
  * @package SerginhoLD\Csv\Exception
  */
-class IOException extends \RuntimeException
+class FileException extends \RuntimeException
 {
     /**
      * @var string

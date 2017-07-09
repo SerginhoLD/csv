@@ -89,12 +89,12 @@ public function parseFile($file, \Closure $convert = null)
 public function parse($csv)
 
 /**
- * @param string $str
+ * @param string $row
  * @param string $delimiter
  * @param string $enclosure
  * @return string[]
  */
-public function parseString($str, $delimiter = null, $enclosure = null)
+public function parseRow($row, $delimiter = null, $enclosure = null)
 
 /**
  * @return string

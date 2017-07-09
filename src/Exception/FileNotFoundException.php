@@ -5,7 +5,7 @@ namespace SerginhoLD\Csv\Exception;
  * Class FileNotFoundException
  * @package SerginhoLD\Csv\Exception
  */
-class FileNotFoundException extends IOException
+class FileNotFoundException extends FileException
 {
     /**
      * FileNotFoundException constructor.

@@ -13,6 +13,7 @@
 
 namespace SerginhoLD\Csv;
 
+use SerginhoLD\Csv\Exception\FileException;
 use SerginhoLD\Csv\Exception\FileNotReadException;
 use SerginhoLD\Csv\Exception\FileNotFoundException;
 
@@ -49,7 +50,7 @@ class Parser
      * @param string $file csv
      * @param \Closure|null $convert Функция для обработки строк файла, например для изменения кодировки
      * @return \Generator
-     * @throws \Exception
+     * @throws FileException
      */
     public function parseFile($file, \Closure $convert = null)
     {
@@ -88,7 +89,7 @@ class Parser
                     continue;
                 }
                 
-                yield $this->parseString($row);
+                yield $this->parseRow($row);
                 $row = null;
             }
         }
@@ -104,7 +105,7 @@ class Parser
      */
     public function parse($csv)
     {
-        $data = explode("\n", str_replace(["\r\n", "\n\r", "\n"], "\n", $csv));
+        $data = explode("\n", str_replace(["\r\n", "\n\r", "\r"], "\n", $csv));
         $rows = [];
         $row = null;
         
@@ -127,7 +128,7 @@ class Parser
                 continue;
             }
             
-            $rows[] = $this->parseString($row);
+            $rows[] = $this->parseRow($row);
             $row = null;
         }
         
@@ -141,13 +142,12 @@ class Parser
      * Последний параметр `$escape` в `str_getcsv` равен параметру `$enclosure`.
      * Как-то работает, ничего не экранируя, ибо RFC 4180 (Поля со спец. символами заключаются в кавычки).
      *
-     * @param string $str
+     * @param string $row
      * @param string $delimiter
      * @param string $enclosure
-     *
      * @return string[]
      */
-    public function parseString($str, $delimiter = null, $enclosure = null)
+    public function parseRow($row, $delimiter = null, $enclosure = null)
     {
         if ($delimiter === null)
             $delimiter = $this->getDelimiter();
@@ -155,7 +155,7 @@ class Parser
         if ($enclosure === null)
             $enclosure = $this->getEnclosure();
         
-        return str_getcsv($str, $delimiter, $enclosure, $enclosure);
+        return str_getcsv($row, $delimiter, $enclosure, $enclosure);
     }
     
     /**
@@ -169,9 +169,13 @@ class Parser
     /**
      * @param string $delimiter
      * @return $this
+     * @throws \LengthException
      */
     public function setDelimiter($delimiter)
     {
+        if (mb_strlen($delimiter) !== 1)
+            throw new \LengthException('A delimiter can consist of only one character');
+        
         $this->delimiter = $delimiter;
         return $this;
     }
@@ -187,9 +191,13 @@ class Parser
     /**
      * @param string $enclosure
      * @return $this
+     * @throws \LengthException
      */
     public function setEnclosure($enclosure)
     {
+        if (mb_strlen($enclosure) !== 1)
+            throw new \LengthException('A enclosure can consist of only one character');
+        
         $this->enclosure = $enclosure;
         return $this;
     }
