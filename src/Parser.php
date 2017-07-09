@@ -13,6 +13,7 @@
 
 namespace SerginhoLD\Csv;
 
+use SerginhoLD\Csv\Exception\FileNotReadException;
 use SerginhoLD\Csv\Exception\FileNotFoundException;
 
 /**
@@ -58,7 +59,7 @@ class Parser
         $handle = @fopen($file, 'r');
         
         if ($handle === false)
-            throw new \RuntimeException('Could not open file for reading');
+            throw new FileNotReadException($file);
         
         try
         {

@@ -20,6 +20,6 @@ class WrongFileMimeTypeException extends IOException
             $message = sprintf('Wrong file "%s" mime-type.', $path);
         }
         
-        parent::__construct($path, $message, 2, $previous);
+        parent::__construct($path, $message, 0, $previous);
     }
 }

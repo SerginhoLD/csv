@@ -2,24 +2,23 @@
 namespace SerginhoLD\Csv\Exception;
 
 /**
- * Class FileNotFoundException
+ * Class FileNotReadException
  * @package SerginhoLD\Csv\Exception
  */
-class FileNotFoundException extends IOException
+class FileNotReadException extends IOException
 {
     /**
-     * FileNotFoundException constructor.
+     * FileNotReadException constructor.
      * @param string $path
-     * @param string $message
+     * @param null $message
      * @param \Exception|null $previous
      */
     public function __construct($path, $message = null, \Exception $previous = null)
     {
         if (null === $message)
         {
-            $message = sprintf('File "%s" could not be found.', $path);
+            $message = sprintf('File "%s" can not be read.', $path);
         }
         
-        parent::__construct($path, $message, 0, $previous);
     }
 }
