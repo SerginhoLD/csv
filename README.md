@@ -90,11 +90,9 @@ public function parse($csv)
 
 /**
  * @param string $row
- * @param string $delimiter
- * @param string $enclosure
  * @return string[]
  */
-public function parseRow($row, $delimiter = null, $enclosure = null)
+public function parseRow($row)
 
 /**
  * @return string
@@ -106,7 +104,7 @@ public function getDelimiter()
  * @return $this
  */
 public function setDelimiter($delimiter)
-   
+
 /**
  * @return string
  */

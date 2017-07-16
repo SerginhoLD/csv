@@ -36,10 +36,10 @@ class Parser
      */
     public function __construct($delimiter = null, $enclosure = null)
     {
-        if (!empty($delimiter))
+        if ($delimiter !== null)
             $this->setDelimiter($delimiter);
         
-        if (!empty($enclosure))
+        if ($enclosure !== null)
             $this->setEnclosure($enclosure);
     }
     
@@ -143,19 +143,11 @@ class Parser
      * Как-то работает, ничего не экранируя, ибо RFC 4180 (Поля со спец. символами заключаются в кавычки).
      *
      * @param string $row
-     * @param string $delimiter
-     * @param string $enclosure
      * @return string[]
      */
-    public function parseRow($row, $delimiter = null, $enclosure = null)
+    public function parseRow($row)
     {
-        if ($delimiter === null)
-            $delimiter = $this->getDelimiter();
-        
-        if ($enclosure === null)
-            $enclosure = $this->getEnclosure();
-        
-        return str_getcsv($row, $delimiter, $enclosure, $enclosure);
+        return str_getcsv($row, $this->getDelimiter(), $this->getEnclosure(), $this->getEnclosure());
     }
     
     /**
